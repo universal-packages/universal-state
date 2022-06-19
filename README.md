@@ -1,8 +1,8 @@
 # State
 
 [![npm version](https://badge.fury.io/js/@universal-packages%2Fstate.svg)](https://www.npmjs.com/package/@universal-packages/state)
-[![Testing](https://github.com/Universal-Packages/universal-state/actions/workflows/testing.yml/badge.svg)](https://github.com/Universal-Packages/universal-state/actions/workflows/testing.yml)
-[![codecov](https://codecov.io/gh/Universal-Packages/universal-state/branch/main/graph/badge.svg?token=CXPJSN8IGL)](https://codecov.io/gh/Universal-Packages/universal-state)
+[![Testing](https://github.com/universal-packages/universal-state/actions/workflows/testing.yml/badge.svg)](https://github.com/universal-packages/universal-state/actions/workflows/testing.yml)
+[![codecov](https://codecov.io/gh/universal-packages/universal-state/branch/main/graph/badge.svg?token=CXPJSN8IGL)](https://codecov.io/gh/universal-packages/universal-state)
 
 There are a lot of ways to track your app state nowadays, all reliable and easy to grasp, but sometimes they can feel a little convoluted as your application grows and you start to keep track of a lot of resolvers, transformers, actions, descriptors, selectors and so on. Universal state offers an alternative by just mutating and getting your state by using string paths.
 
@@ -35,7 +35,7 @@ test()
 
 ### .mutate()
 
-Mutate enables you to apply all kinds of mutations to the state without worrying about race conditions with other mutations being applied, it takes a mutator function and calls it only when it’s its turn to be dispatched (All mutations are dispatched in a linear way). It returns a [BufferDispatcher](https://github.com/Universal-Packages/universal-buffer-dispatcher) object in charge of dispatching all mutations.
+Mutate enables you to apply all kinds of mutations to the state without worrying about race conditions with other mutations being applied, it takes a mutator function and calls it only when it’s its turn to be dispatched (All mutations are dispatched in a linear way). It returns a [BufferDispatcher](https://github.com/universal-packages/universal-buffer-dispatcher) object in charge of dispatching all mutations.
 
 ```js
 import State from '@universal-packages/state'
