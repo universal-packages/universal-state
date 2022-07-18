@@ -13,7 +13,7 @@
     "test:full": "jest --coverage --verbose"
   },
   "dependencies": {
-    "@universal-packages/buffer-dispatcher": "^1.0.1"
+    "@universal-packages/buffer-dispatcher": "^1.0.2"
   },
   "devDependencies": {
     "@types/jest": "^28.1.0",
