@@ -17,7 +17,7 @@ npm install @universal-packages/state
 State class is the high level representation of the state object, it provides all tools related to modify and read from state.
 
 ```js
-import State from '@universal-packages/state'
+import { State } from '@universal-packages/state'
 
 async function test() {
   const initialState = { loading: true }
@@ -38,7 +38,7 @@ test()
 Mutate enables you to apply all kinds of mutations to the state without worrying about race conditions with other mutations being applied, it takes a mutator function and calls it only when it’s its turn to be dispatched (All mutations are dispatched in a linear way). It returns a [BufferDispatcher](https://github.com/universal-packages/universal-buffer-dispatcher) object in charge of dispatching all mutations.
 
 ```js
-import State from '@universal-packages/state'
+import { State } from '@universal-packages/state'
 
 async function test() {
   const initialState = { loading: true, auth: { user: {}, empty: true } }

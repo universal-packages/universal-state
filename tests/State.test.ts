@@ -1,4 +1,4 @@
-import State, { ToolSet } from '../src'
+import { State, ToolSet } from '../src'
 
 describe('State', (): void => {
   it('it can have an initial state', async (): Promise<void> => {

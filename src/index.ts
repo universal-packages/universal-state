@@ -1,2 +1,2 @@
-export { default } from './State'
+export { default as State } from './State'
 export * from './State.types'

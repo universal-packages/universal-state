@@ -1,5 +1,6 @@
+import { BufferDispatcher } from '@universal-packages/buffer-dispatcher'
 import EventEmitter from 'events'
-import BufferDispatcher from '@universal-packages/buffer-dispatcher'
+
 import { ToEmit, ToolSet, Mutator, ProcessPathOptions, PathInfo, PathTraverse } from './State.types'
 
 /**
