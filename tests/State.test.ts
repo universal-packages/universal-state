@@ -52,7 +52,7 @@ describe('State', (): void => {
       expect(state.get('/not/a/path/to/something')).toEqual(undefined)
     })
 
-    it('throws if not valid path is provded and hard is set to true', async (): Promise<void> => {
+    it('throws if not valid path is provided and hard is set to true', async (): Promise<void> => {
       const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] }, users: { old: [{ id: 3 }, { id: 4 }] } }
       const state = new State(initialState)
 
@@ -88,7 +88,7 @@ describe('State', (): void => {
     })
 
     describe('.concat', (): void => {
-      it('concatenate arays in the tree', async (): Promise<void> => {
+      it('concatenate arrays in the tree', async (): Promise<void> => {
         const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] }, users: { old: [{ id: 3 }, { id: 4 }] } }
         const state = new State(initialState)
 
@@ -175,7 +175,7 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(0) // is the same
           expect(eventOld).toHaveBeenCalledTimes(0) // is the same
-          expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emited
+          expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emitted
           expect(eventId).toHaveBeenCalledTimes(1) // of course id changed
 
           eventAll.mockClear()
@@ -199,7 +199,7 @@ describe('State', (): void => {
           expect(eventDeep).toHaveBeenCalledTimes(1) // was created
         })
 
-        it('throws if part of the path is not a map to go thorugh', async (): Promise<void> => {
+        it('throws if part of the path is not a map to go thorough', async (): Promise<void> => {
           const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] }, users: { old: [{ id: 3 }, { id: 4 }] } }
           const state = new State(initialState)
 
@@ -256,7 +256,7 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(0) // posts didn't really changed
           expect(eventNew).toHaveBeenCalledTimes(0) // new didn't really changed
-          expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emited
+          expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emitted
           expect(eventId).toHaveBeenCalledTimes(1) // id was deleted so it technically changed
 
           eventAll.mockClear()
@@ -270,11 +270,11 @@ describe('State', (): void => {
           })
           await dispatcher.await()
           expect(state.get('posts')).toEqual({ new: [{}, { id: 2 }] })
-          expect(eventAll).toHaveBeenCalledTimes(0) // Nothnig changed
-          expect(eventPosts).toHaveBeenCalledTimes(0) // Nothnig changed
-          expect(eventNew).toHaveBeenCalledTimes(0) // Nothnig changed
-          expect(eventAt0).toHaveBeenCalledTimes(0) // Nothnig changed
-          expect(eventId).toHaveBeenCalledTimes(0) // Nothnig changed
+          expect(eventAll).toHaveBeenCalledTimes(0) // Nothing changed
+          expect(eventPosts).toHaveBeenCalledTimes(0) // Nothing changed
+          expect(eventNew).toHaveBeenCalledTimes(0) // Nothing changed
+          expect(eventAt0).toHaveBeenCalledTimes(0) // Nothing changed
+          expect(eventId).toHaveBeenCalledTimes(0) // Nothing changed
         })
 
         it('throws if trying to delete root', async (): Promise<void> => {
@@ -295,7 +295,7 @@ describe('State', (): void => {
       })
 
       describe('.concat', (): void => {
-        it('concatenate arays in the tree', async (): Promise<void> => {
+        it('concatenate arrays in the tree', async (): Promise<void> => {
           const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] }, users: { old: [{ id: 3 }, { id: 4 }] } }
           const state = new State(initialState)
           const eventAll = jest.fn()
@@ -319,8 +319,8 @@ describe('State', (): void => {
           expect(state.get('posts/new')).toEqual([{ id: 1 }, { id: 2 }, { id: 100 }])
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(0) // posts conttents didn't really changed
-          expect(eventNew).toHaveBeenCalledTimes(1) // new contenst changed
+          expect(eventPosts).toHaveBeenCalledTimes(0) // posts contents didn't really changed
+          expect(eventNew).toHaveBeenCalledTimes(1) // new contents changed
           expect(eventOld).toHaveBeenCalledTimes(0)
 
           eventAll.mockClear()
@@ -491,7 +491,7 @@ describe('State', (): void => {
           } catch (err) {
             error = err
           }
-          expect(error).toEqual(new Error('Invalid path to value or target is not a mergeable object'))
+          expect(error).toEqual(new Error('Invalid path to value or target is not an object that can bve merged'))
         })
       })
 

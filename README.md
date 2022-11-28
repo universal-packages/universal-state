@@ -47,8 +47,8 @@ async function test() {
 
   const dispatcher = state.mutate((toolSet) => {
     toolSet.set('loading', false)
-    toolset.merge('auth/user', user)
-    toolser.remove('auth/empty')
+    toolSet.merge('auth/user', user)
+    toolSet.remove('auth/empty')
   })
 
   await despatcher.await()
@@ -67,7 +67,7 @@ Provides the methods to actually change the state, use only these to mutate teh 
 
 ```js
 state.mutate((toolSet) => {
-  // All the muations
+  // All the mutations
 })
 ```
 
@@ -87,7 +87,7 @@ const initialState = { users: { ordered: [{ id: 1 }] } }
 toolSet.merge('users/ordered/0', { name: 'david' })
 ```
 
-- `remove` completly oblitarete any part of teh state
+- `remove` completely obliterates any part of teh state
 
 ```js
 const initialState = { users: { ordered: [{ id: 1 }] } }
@@ -125,7 +125,7 @@ const value = state.get('and/am/mean/it/0/it/does/not/matter/how/deep')
 
 ## Listening for changes
 
-The state object behaves just like a eventemitter, you can subscribe to changes in the state for a specific path.
+The state object behaves just like a event emitter, you can subscribe to changes in the state for a specific path.
 
 ```js
 const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] } }
@@ -169,7 +169,7 @@ This library is developed in TypeScript and shipped fully typed.
 
 ## Contributing
 
-The development of this library in the open on GitHub, and we are grateful to the community for contributing bugfixes and improvements. Read below to learn how you can take part in improving this library.
+The development of this library happens in the open on GitHub, and we are grateful to the community for contributing bugfixes and improvements. Read below to learn how you can take part in improving this library.
 
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
 - [Contributing Guide](./CONTRIBUTING.md)

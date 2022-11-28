@@ -1,6 +1,5 @@
 import { BufferDispatcher } from '@universal-packages/buffer-dispatcher'
 import EventEmitter from 'events'
-
 import { ToEmit, ToolSet, Mutator, ProcessPathOptions, PathInfo, PathTraverse } from './State.types'
 
 /**
@@ -13,12 +12,12 @@ export default class State extends EventEmitter {
   public readonly state: any = {}
 
   /*
-   * We use a buffer dispatcher so any motation made to the state from anywere
-   * will be prioritazed ina queue fashion.
+   * We use a buffer dispatcher so any mutation made to the state from anywhere
+   * will be prioritized ina queue fashion.
    */
   private bufferDispatcher = new BufferDispatcher<Mutator>(this.dispatchMutation.bind(this))
 
-  /* The tool set provided to mutators, user should only mutate the state ushing these */
+  /* The tool set provided to mutators, user should only mutate the state using these */
   private toolSet: ToolSet = {
     concat: this.toolSetConcat.bind(this),
     remove: this.toolSetRemove.bind(this),
@@ -27,7 +26,7 @@ export default class State extends EventEmitter {
     update: this.toolSetUpdate.bind(this)
   }
 
-  /* After a mutation here resides all the detected paths that sgould be notified by a change */
+  /* After a mutation here resides all the detected paths that should be notified by a change */
   private toEmit: ToEmit = {}
 
   public constructor(initialState?: any) {
@@ -38,40 +37,40 @@ export default class State extends EventEmitter {
 
   /* Push a single concat mutation into the queue */
   public concat(path: string | string[], value: any): BufferDispatcher<Mutator> {
-    return this.mutate((toolset: ToolSet): void => {
-      toolset.concat(path, value)
+    return this.mutate((toolSet: ToolSet): void => {
+      toolSet.concat(path, value)
     })
   }
 
   /* Push a single remove mutation into the queue */
   public remove(path: string | string[]): BufferDispatcher<Mutator> {
-    return this.mutate((toolset: ToolSet): void => {
-      toolset.remove(path)
+    return this.mutate((toolSet: ToolSet): void => {
+      toolSet.remove(path)
     })
   }
 
   /* Push a single merge mutation into the queue */
   public merge(path: string | string[], value: any): BufferDispatcher<Mutator> {
-    return this.mutate((toolset: ToolSet): void => {
-      toolset.merge(path, value)
+    return this.mutate((toolSet: ToolSet): void => {
+      toolSet.merge(path, value)
     })
   }
 
   /* Push a single set mutation into the queue */
   public set(path: string | string[], value: any): BufferDispatcher<Mutator> {
-    return this.mutate((toolset: ToolSet): void => {
-      toolset.set(path, value)
+    return this.mutate((toolSet: ToolSet): void => {
+      toolSet.set(path, value)
     })
   }
 
   /* Push a single update mutation into the queue */
   public update<V = any>(path: string | string[], setter: (value: V) => V): BufferDispatcher<Mutator> {
-    return this.mutate((toolset: ToolSet): void => {
-      toolset.update(path, setter)
+    return this.mutate((toolSet: ToolSet): void => {
+      toolSet.update(path, setter)
     })
   }
 
-  /* Cleans app a path or bilds one from an array */
+  /* Cleans app a path or builds one from an array */
   public static getPath(path: string | string[]): string {
     const joined = `/${Array.isArray(path) ? path.join('/') : path}/`
     const striped = joined.replace(/\/+/gm, '/')
@@ -92,7 +91,7 @@ export default class State extends EventEmitter {
     for (let i = 0; i < elements.length - 1; i++) {
       const currentElement = elements[i]
 
-      // If the path is requiring us to keep advancing as if there was an object to keep advacing on
+      // If the path is requiring us to keep advancing as if there was an object to keep advancing on
       // but we reach a value in the tree that does not work as a map, we can not deliver a value
       if (typeof currentNode[currentElement] !== 'object' || currentNode[currentElement] === null) {
         if (hard) {
@@ -109,7 +108,7 @@ export default class State extends EventEmitter {
   }
 
   /**
-   * It takes a mutator fuctions as a parameter to push into the mutations buffer
+   * It takes a mutator functions as a parameter to push into the mutations buffer
    * to be dispatched as soon as possible
    */
   public mutate(mutator: Mutator): BufferDispatcher<Mutator> {
@@ -118,7 +117,7 @@ export default class State extends EventEmitter {
     return this.bufferDispatcher
   }
 
-  /** Called by our buffer dispatcheer for every motator pushed to it and emits all pending emitions after every mutation */
+  /** Called by our buffer dispatcher for every mutator pushed to it and emits all pending emits after every mutation */
   private dispatchMutation(mutator: Mutator): void {
     mutator(this.toolSet)
 
@@ -131,7 +130,7 @@ export default class State extends EventEmitter {
     this.toEmit = {}
   }
 
-  /** Part of tool set will enable muatators to concat directly into state arrays  */
+  /** Part of tool set will enable mutators to concat directly into state arrays  */
   private toolSetConcat(path: string | string[], value: any): void {
     const pathInfo = this.processPath(path)
 
@@ -142,7 +141,7 @@ export default class State extends EventEmitter {
     for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
       const currentPathTraverse = pathInfo.pathTraverse[i]
 
-      // Here we just maje shure we set emitions for every new child created in to the state tree
+      // Here we just make sure we set emits for every new child created in to the state tree
       if (currentPathTraverse.created) {
         const previousPathTraverse = pathInfo.pathTraverse[i - 1]
 
@@ -156,8 +155,8 @@ export default class State extends EventEmitter {
       }
     }
 
-    // We enable concat to just behave as "set" if we are setting the taget for the first time
-    // But if it alreary exists a target value in the tree and is not an array then we throw
+    // We enable concat to just behave as "set" if we are setting the target for the first time
+    // But if it already exists a target value in the tree and is not an array then we throw
     if (!pathInfo.targetNode[pathInfo.targetKey]) {
       pathInfo.targetNode[pathInfo.targetKey] = value
     } else if (Array.isArray(pathInfo.targetNode[pathInfo.targetKey])) {
@@ -173,7 +172,7 @@ export default class State extends EventEmitter {
     this.toEmit[pathInfo.path] = value
   }
 
-  /** Part of tool set will enable muatators to remove a key value in the state  */
+  /** Part of tool set will enable mutators to remove a key value in the state  */
   private toolSetRemove(path: string | string[]): void {
     const pathInfo = this.processPath(path, { onlyCheck: true })
 
@@ -190,7 +189,7 @@ export default class State extends EventEmitter {
 
     this.toEmit['*'] = this.state
 
-    // If we deleted the taget node then the previous was modified by not having the target enymore
+    // If we deleted the target node then the previous was modified by not having the target anymore
     if (previousPath && !previousPath.created) {
       this.toEmit[previousPath.path] = previousPath.node
     }
@@ -203,20 +202,20 @@ export default class State extends EventEmitter {
     return State.getPath(path).split('/')
   }
 
-  /** Part of tool set will enable muatators to merge a map into the state or one of its nodes  */
-  private toolSetMerge(treePath: string | string[], mergeable: any): void {
+  /** Part of tool set will enable mutators to merge a map into the state or one of its nodes  */
+  private toolSetMerge(treePath: string | string[], mergeSubject: any): void {
     const pathInfo = this.processPath(treePath)
-    const mergeableKeys = Object.keys(mergeable)
+    const mergeSubjectKeys = Object.keys(mergeSubject)
 
-    // When traing to merge into the root state we just merge and thats it
+    // When trying to merge into the root state we just merge and thats it
     if (pathInfo.targetNodeIsRoot) {
       this.toEmit['*'] = this.state
 
-      for (let i = 0; i < mergeableKeys.length; i++) {
-        const currentKey = mergeableKeys[i]
+      for (let i = 0; i < mergeSubjectKeys.length; i++) {
+        const currentKey = mergeSubjectKeys[i]
 
-        if (pathInfo.targetNode[currentKey] !== mergeable[currentKey]) {
-          pathInfo.targetNode[currentKey] = mergeable[currentKey]
+        if (pathInfo.targetNode[currentKey] !== mergeSubject[currentKey]) {
+          pathInfo.targetNode[currentKey] = mergeSubject[currentKey]
 
           this.toEmit[currentKey] = pathInfo.targetNode[currentKey]
         }
@@ -226,7 +225,7 @@ export default class State extends EventEmitter {
       // the actual object in which we want to merge
       const pathInfo = this.processPath(treePath, { includeLast: true })
 
-      if (pathInfo.error) throw new Error('Invalid path to value or target is not a mergeable object')
+      if (pathInfo.error) throw new Error('Invalid path to value or target is not an object that can bve merged')
 
       for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
         const currentPathTraverse = pathInfo.pathTraverse[i]
@@ -244,12 +243,12 @@ export default class State extends EventEmitter {
         }
       }
 
-      // We go through all meregeable keys and prepare to notify any listener of those keys
-      for (let i = 0; i < mergeableKeys.length; i++) {
-        const currentKey = mergeableKeys[i]
+      // We go through all merge subject keys and prepare to notify any listener of those keys
+      for (let i = 0; i < mergeSubjectKeys.length; i++) {
+        const currentKey = mergeSubjectKeys[i]
 
-        if (pathInfo.targetNode[currentKey] !== mergeable[currentKey]) {
-          pathInfo.targetNode[currentKey] = mergeable[currentKey]
+        if (pathInfo.targetNode[currentKey] !== mergeSubject[currentKey]) {
+          pathInfo.targetNode[currentKey] = mergeSubject[currentKey]
 
           const previousPath = pathInfo.pathTraverse[pathInfo.pathTraverse.length - 1]
 
@@ -265,7 +264,7 @@ export default class State extends EventEmitter {
     }
   }
 
-  /** Part of tool set will enable muatators to set a value in any part of the state  */
+  /** Part of tool set will enable mutators to set a value in any part of the state  */
   private toolSetSet(path: string | string[], value: any): void {
     const pathInfo = this.processPath(path)
 
@@ -307,7 +306,7 @@ export default class State extends EventEmitter {
   }
 
   /**
-   * It goues thorug the path and matches the path with the state nodes,
+   * It goes thorough the path and matches the path with the state nodes,
    * it also creates any nodes in case the user is setting deep into the state
    * */
   private processPath(path: string | string[], options: ProcessPathOptions = { includeLast: false, onlyCheck: false }): PathInfo {
@@ -326,13 +325,13 @@ export default class State extends EventEmitter {
 
       currentPath = `${currentPath}${currentPath !== '' ? '/' : ''}${currentElement}`
 
-      // While going through the state using the path provided we realise we are about to go through a value
+      // While going through the state using the path provided we realize we are about to go through a value
       // that is not an valid object(map) to go through
       if (typeof targetInNode !== 'object' || targetInNode === null) {
         // And we are still going through the state
         if (i < iterationLimit) {
           // And the target in node is not undefined (since is nothing there we can possible
-          // initialize it, this as a feature when trying to set something deeply withut
+          // initialize it, this as a feature when trying to set something deeply without
           // the need of initializing level by level
           if (targetInNode === undefined) {
             if (options.onlyCheck) {
@@ -378,7 +377,7 @@ export default class State extends EventEmitter {
     const newValue = setter(previousValue)
 
     // We do not check if the value actually changed
-    // because the update could has changed an object refrence
+    // because the update could has changed an object reference
     // and we could receive the same reference
     pathInfo.targetNode[pathInfo.targetKey] = newValue
 

@@ -1,4 +1,4 @@
-export type Mutator = (toolset: ToolSet) => void
+export type Mutator = (toolSet: ToolSet) => void
 
 export interface ToEmit {
   [eventName: string]: any
