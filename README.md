@@ -33,7 +33,19 @@ test()
 // > { loading: false }
 ```
 
-### .mutate()
+### Instance methods
+
+#### **`.get(path: String)`**
+
+Get any value using a deep path.
+
+```js
+const state = new State(initialState)
+
+const value = state.get('and/am/mean/it/0/it/does/not/matter/how/deep')
+```
+
+#### **`.mutate(mutator: Function)`**
 
 Mutate enables you to apply all kinds of mutations to the state without worrying about race conditions with other mutations being applied, it takes a mutator function and calls it only when it’s its turn to be dispatched (All mutations are dispatched in a linear way). It returns a [BufferDispatcher](https://github.com/universal-packages/universal-buffer-dispatcher) object in charge of dispatching all mutations.
 
@@ -61,7 +73,7 @@ test()
 // > { loading: false, auth: { user: { id: 1, name: 'david' } } }
 ```
 
-### ToolSet
+## ToolSet
 
 Provides the methods to actually change the state, use only these to mutate teh state.
 
@@ -71,7 +83,11 @@ state.mutate((toolSet) => {
 })
 ```
 
-- `concat` Directly append an array into one inside the state
+### Instance methods
+
+#### **`.concat(path: String, array: Array)`**
+
+Directly append an array into one inside the state
 
 ```js
 const initialState = { users: { ordered: [{ id: 1 }] } }
@@ -79,7 +95,9 @@ const initialState = { users: { ordered: [{ id: 1 }] } }
 toolSet.concat('users/ordered', [{ id: 2 }, { id: 3 }])
 ```
 
-- `merge` Merge an object into any place into the state
+#### **`.merge(path: String, subject: Object)`**
+
+Merge an object into any place into the state
 
 ```js
 const initialState = { users: { ordered: [{ id: 1 }] } }
@@ -87,7 +105,9 @@ const initialState = { users: { ordered: [{ id: 1 }] } }
 toolSet.merge('users/ordered/0', { name: 'david' })
 ```
 
-- `remove` completely obliterates any part of teh state
+#### **`.remove(path: String)`**
+
+Completely obliterates any part of the state
 
 ```js
 const initialState = { users: { ordered: [{ id: 1 }] } }
@@ -95,7 +115,9 @@ const initialState = { users: { ordered: [{ id: 1 }] } }
 toolSet.remove('users/ordered')
 ```
 
-- `set` Set a single value into any part of the state
+#### **`.set(path: String, subject: any)`**
+
+Sets a single value into any part of the state
 
 ```js
 const initialState = { users: { ordered: [{ id: 1 }] } }
@@ -103,7 +125,9 @@ const initialState = { users: { ordered: [{ id: 1 }] } }
 toolSet.set('users/ordered/0/name', 'david')
 ```
 
-- `update` Updates a value in the state using a function providing the current value as a parameter
+#### **`.update(path: String, updater: Function)`**
+
+Updates a value in the state using a function providing the current value as a parameter
 
 ```js
 const initialState = { users: { ordered: [{ id: 1 }] } }
@@ -111,16 +135,6 @@ const initialState = { users: { ordered: [{ id: 1 }] } }
 toolSet.update('users/ordered/0', (david) => {
   return { id: david.id, name: 'omar' }
 })
-```
-
-### .get()
-
-Get any value using a deep path.
-
-```js
-const state = new State(initialState)
-
-const value = state.get('and/am/mean/it/0/it/does/not/matter/how/deep')
 ```
 
 ## Listening for changes
