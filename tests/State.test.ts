@@ -155,8 +155,8 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(1) // posts changed because its contents changed
           expect(eventOld).toHaveBeenCalledTimes(1) // old was created so it changed
-          expect(eventAt0).toHaveBeenCalledTimes(0)
-          expect(eventId).toHaveBeenCalledTimes(0)
+          expect(eventAt0).toHaveBeenCalledTimes(1) // it appeared
+          expect(eventId).toHaveBeenCalledTimes(1) // it appeared
 
           eventAll.mockClear()
           eventPosts.mockClear()
@@ -193,7 +193,7 @@ describe('State', (): void => {
           expect(state.get('posts/more/deep/id')).toEqual(200)
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(1) // is the same
+          expect(eventPosts).toHaveBeenCalledTimes(1) // it insides changed
           expect(eventOld).toHaveBeenCalledTimes(0) // is the same
           expect(eventMore).toHaveBeenCalledTimes(1) // was created
           expect(eventDeep).toHaveBeenCalledTimes(1) // was created
@@ -275,6 +275,23 @@ describe('State', (): void => {
           expect(eventNew).toHaveBeenCalledTimes(0) // Nothing changed
           expect(eventAt0).toHaveBeenCalledTimes(0) // Nothing changed
           expect(eventId).toHaveBeenCalledTimes(0) // Nothing changed
+
+          eventAll.mockClear()
+          eventPosts.mockClear()
+          eventNew.mockClear()
+          eventAt0.mockClear()
+          eventId.mockClear()
+
+          dispatcher = state.mutate((toolSet: ToolSet): void => {
+            toolSet.remove('/posts')
+          })
+
+          expect(state.get('posts')).toEqual(undefined)
+          expect(eventAll).toHaveBeenCalledTimes(1) // posts was deleted
+          expect(eventPosts).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventNew).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventAt0).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventId).toHaveBeenCalledTimes(1) // All up change disappeared
         })
 
         it('throws if trying to delete root', async (): Promise<void> => {
@@ -301,6 +318,8 @@ describe('State', (): void => {
           const eventAll = jest.fn()
           const eventPosts = jest.fn()
           const eventNew = jest.fn()
+          const eventAt0 = jest.fn()
+          const eventId = jest.fn()
           const eventOld = jest.fn()
           const eventMore = jest.fn()
           const eventDeep = jest.fn()
@@ -308,6 +327,8 @@ describe('State', (): void => {
           state.on('*', eventAll)
           state.on('posts', eventPosts)
           state.on('posts/new', eventNew)
+          state.on('posts/new/0', eventAt0)
+          state.on('posts/new/0/id', eventId)
           state.on('posts/old', eventOld)
           state.on('posts/more', eventMore)
           state.on('posts/more/deep', eventDeep)
@@ -321,11 +342,15 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(0) // posts contents didn't really changed
           expect(eventNew).toHaveBeenCalledTimes(1) // new contents changed
+          expect(eventAt0).toHaveBeenCalledTimes(1) // it appeared
+          expect(eventId).toHaveBeenCalledTimes(1) // it appeared
           expect(eventOld).toHaveBeenCalledTimes(0)
 
           eventAll.mockClear()
           eventPosts.mockClear()
           eventNew.mockClear()
+          eventAt0.mockClear()
+          eventId.mockClear()
           eventOld.mockClear()
           eventMore.mockClear()
           eventDeep.mockClear()
@@ -344,6 +369,8 @@ describe('State', (): void => {
           eventAll.mockClear()
           eventPosts.mockClear()
           eventNew.mockClear()
+          eventAt0.mockClear()
+          eventId.mockClear()
           eventOld.mockClear()
           eventMore.mockClear()
           eventDeep.mockClear()
@@ -403,11 +430,13 @@ describe('State', (): void => {
           const eventPosts = jest.fn()
           const eventOld = jest.fn()
           const eventExtra = jest.fn()
+          const eventExtraYes = jest.fn()
 
           state.on('*', eventAll)
           state.on('posts', eventPosts)
           state.on('posts/old', eventOld)
           state.on('posts/extra', eventExtra)
+          state.on('posts/extra/yes', eventExtraYes)
 
           let dispatcher = state.mutate((toolSet: ToolSet): void => {
             toolSet.merge('/posts/', { old: [{ id: 100 }] })
@@ -417,8 +446,15 @@ describe('State', (): void => {
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(1) // posts contents changed
-          expect(eventOld).toHaveBeenCalledTimes(1)
+          expect(eventOld).toHaveBeenCalledTimes(1) // was added in the merge
           expect(eventExtra).toHaveBeenCalledTimes(0)
+          expect(eventExtraYes).toHaveBeenCalledTimes(0)
+
+          eventAll.mockClear()
+          eventPosts.mockClear()
+          eventOld.mockClear()
+          eventExtra.mockClear()
+          eventExtraYes.mockClear()
 
           dispatcher = state.mutate((toolSet: ToolSet): void => {
             toolSet.merge('/posts/extra', { yes: 'no' })
@@ -426,10 +462,29 @@ describe('State', (): void => {
           await dispatcher.await()
           expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }], extra: { yes: 'no' } })
 
-          expect(eventAll).toHaveBeenCalledTimes(2) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(2) // posts content changed
-          expect(eventOld).toHaveBeenCalledTimes(1) // is the same
+          expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
+          expect(eventPosts).toHaveBeenCalledTimes(1) // posts content changed
+          expect(eventOld).toHaveBeenCalledTimes(0) // is the same
           expect(eventExtra).toHaveBeenCalledTimes(1) // was created
+          expect(eventExtraYes).toHaveBeenCalledTimes(1) // it appeared
+
+          eventAll.mockClear()
+          eventPosts.mockClear()
+          eventOld.mockClear()
+          eventExtra.mockClear()
+          eventExtraYes.mockClear()
+
+          dispatcher = state.mutate((toolSet: ToolSet): void => {
+            toolSet.merge('/posts', { extra: { no: 'yes' } })
+          })
+          await dispatcher.await()
+          expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }], extra: { no: 'yes' } })
+
+          expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
+          expect(eventPosts).toHaveBeenCalledTimes(1) // posts content changed
+          expect(eventOld).toHaveBeenCalledTimes(0) // is the same
+          expect(eventExtra).toHaveBeenCalledTimes(1) // was created
+          expect(eventExtraYes).toHaveBeenCalledTimes(1) // it disappeared
         })
 
         it('can merge an object into the main state', async (): Promise<void> => {
@@ -509,7 +564,7 @@ describe('State', (): void => {
           state.on('posts/new', eventNew)
           state.on('posts/new/0', eventFirst)
 
-          const dispatcher = state.mutate((toolSet: ToolSet): void => {
+          let dispatcher = state.mutate((toolSet: ToolSet): void => {
             toolSet.update('/posts/new/0', (first: any): any => {
               first.name = 'yes'
 
@@ -523,6 +578,26 @@ describe('State', (): void => {
           expect(eventPosts).toHaveBeenCalledTimes(0) // Not changed
           expect(eventNew).toHaveBeenCalledTimes(1) // First element of this collection changed so it technically is different now
           expect(eventFirst).toHaveBeenCalledTimes(1) // First element was updated
+
+          eventAll.mockClear()
+          eventPosts.mockClear()
+          eventNew.mockClear()
+          eventFirst.mockClear()
+
+          dispatcher = state.mutate((toolSet: ToolSet): void => {
+            toolSet.update('/posts', (posts: any): any => {
+              posts.updated = 'yes'
+
+              return posts
+            })
+          })
+          await dispatcher.await()
+          expect(state.get('posts')).toEqual({ new: [{ id: 1, name: 'yes' }, { id: 2 }], updated: 'yes' })
+
+          expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
+          expect(eventPosts).toHaveBeenCalledTimes(1) // Posts was updated
+          expect(eventNew).toHaveBeenCalledTimes(1) // Potentially changed
+          expect(eventFirst).toHaveBeenCalledTimes(1) // Potentially changed
         })
 
         it('throws if trying to update the main state', async (): Promise<void> => {

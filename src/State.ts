@@ -169,6 +169,16 @@ export default class State extends EventEmitter {
 
     this.toEmit['*'] = this.state
 
+    // When concatenated the the insides changes with potential deep children
+    const subscribersEventNames = this.eventNames()
+    for (let i = 0; i < subscribersEventNames.length; i++) {
+      const currentEventName = subscribersEventNames[i] as string
+
+      if (currentEventName.startsWith(pathInfo.path)) {
+        this.toEmit[currentEventName] = undefined
+      }
+    }
+
     this.toEmit[pathInfo.path] = value
   }
 
@@ -194,6 +204,16 @@ export default class State extends EventEmitter {
       this.toEmit[previousPath.path] = previousPath.node
     }
 
+    // If we deleted a container then all its children were modified by not having the container anymore
+    const subscribersEventNames = this.eventNames()
+    for (let i = 0; i < subscribersEventNames.length; i++) {
+      const currentEventName = subscribersEventNames[i] as string
+
+      if (currentEventName.startsWith(pathInfo.path)) {
+        this.toEmit[currentEventName] = undefined
+      }
+    }
+
     this.toEmit[pathInfo.path] = undefined
   }
 
@@ -216,6 +236,16 @@ export default class State extends EventEmitter {
 
         if (pathInfo.targetNode[currentKey] !== mergeSubject[currentKey]) {
           pathInfo.targetNode[currentKey] = mergeSubject[currentKey]
+
+          // When merged the the insides changes with potential deep children
+          const subscribersEventNames = this.eventNames()
+          for (let i = 0; i < subscribersEventNames.length; i++) {
+            const currentEventName = subscribersEventNames[i] as string
+
+            if (currentEventName.startsWith(currentKey)) {
+              this.toEmit[currentEventName] = undefined
+            }
+          }
 
           this.toEmit[currentKey] = pathInfo.targetNode[currentKey]
         }
@@ -256,6 +286,16 @@ export default class State extends EventEmitter {
 
           if (previousPath && !previousPath.created) {
             this.toEmit[previousPath.path] = previousPath.node
+          }
+
+          // When merged the the insides changes with potential deep children
+          const subscribersEventNames = this.eventNames()
+          for (let i = 0; i < subscribersEventNames.length; i++) {
+            const currentEventName = subscribersEventNames[i] as string
+
+            if (currentEventName.startsWith(`${pathInfo.path}/${currentKey}`)) {
+              this.toEmit[currentEventName] = undefined
+            }
           }
 
           this.toEmit[`${pathInfo.path}/${currentKey}`] = pathInfo.targetNode[currentKey]
@@ -302,6 +342,16 @@ export default class State extends EventEmitter {
       }
 
       this.toEmit[pathInfo.path] = value
+
+      // If we set something in a container then all its children were potentially modified
+      const subscribersEventNames = this.eventNames()
+      for (let i = 0; i < subscribersEventNames.length; i++) {
+        const currentEventName = subscribersEventNames[i] as string
+
+        if (currentEventName.startsWith(pathInfo.path)) {
+          this.toEmit[currentEventName] = undefined
+        }
+      }
     }
   }
 
@@ -388,6 +438,16 @@ export default class State extends EventEmitter {
 
     if (previousPath) {
       this.toEmit[previousPath.path] = previousPath.node
+    }
+
+    // If we update a container then all its children were potentially modified
+    const subscribersEventNames = this.eventNames()
+    for (let i = 0; i < subscribersEventNames.length; i++) {
+      const currentEventName = subscribersEventNames[i] as string
+
+      if (currentEventName.startsWith(pathInfo.path)) {
+        this.toEmit[currentEventName] = undefined
+      }
     }
 
     this.toEmit[pathInfo.path] = newValue
