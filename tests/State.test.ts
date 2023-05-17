@@ -257,7 +257,9 @@ describe('State', (): void => {
           expect(eventPosts).toHaveBeenCalledTimes(0) // posts didn't really changed
           expect(eventNew).toHaveBeenCalledTimes(0) // new didn't really changed
           expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emitted
+          expect(eventAt0).toHaveBeenCalledWith({})
           expect(eventId).toHaveBeenCalledTimes(1) // id was deleted so it technically changed
+          expect(eventId).toHaveBeenCalledWith(undefined)
 
           eventAll.mockClear()
           eventPosts.mockClear()
@@ -289,9 +291,13 @@ describe('State', (): void => {
           expect(state.get('posts')).toEqual(undefined)
           expect(eventAll).toHaveBeenCalledTimes(1) // posts was deleted
           expect(eventPosts).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventPosts).toHaveBeenCalledWith(undefined)
           expect(eventNew).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventNew).toHaveBeenCalledWith(undefined)
           expect(eventAt0).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventAt0).toHaveBeenCalledWith(undefined)
           expect(eventId).toHaveBeenCalledTimes(1) // All up change disappeared
+          expect(eventId).toHaveBeenCalledWith(undefined)
         })
 
         it('throws if trying to delete root', async (): Promise<void> => {
@@ -343,7 +349,9 @@ describe('State', (): void => {
           expect(eventPosts).toHaveBeenCalledTimes(0) // posts contents didn't really changed
           expect(eventNew).toHaveBeenCalledTimes(1) // new contents changed
           expect(eventAt0).toHaveBeenCalledTimes(1) // it appeared
+          expect(eventAt0).toHaveBeenCalledWith({ id: 1 }) // it appeared
           expect(eventId).toHaveBeenCalledTimes(1) // it appeared
+          expect(eventId).toHaveBeenCalledWith(1)
           expect(eventOld).toHaveBeenCalledTimes(0)
 
           eventAll.mockClear()
@@ -365,6 +373,7 @@ describe('State', (): void => {
           expect(eventPosts).toHaveBeenCalledTimes(0) // is the same
           expect(eventNew).toHaveBeenCalledTimes(0) // is the same
           expect(eventOld).toHaveBeenCalledTimes(1) // content was created
+          expect(eventOld).toHaveBeenCalledWith([{ id: 200 }])
 
           eventAll.mockClear()
           eventPosts.mockClear()
@@ -386,7 +395,9 @@ describe('State', (): void => {
           expect(eventNew).toHaveBeenCalledTimes(0) // nothing changed
           expect(eventOld).toHaveBeenCalledTimes(0) // nothing changed
           expect(eventMore).toHaveBeenCalledTimes(1) // was created
+          expect(eventMore).toHaveBeenCalledWith({ deep: [{ id: 200 }] })
           expect(eventDeep).toHaveBeenCalledTimes(1) // content was created
+          expect(eventDeep).toHaveBeenCalledWith([{ id: 200 }])
         })
 
         it('throws if trying to concat into the root state', async (): Promise<void> => {
@@ -447,6 +458,7 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(1) // posts contents changed
           expect(eventOld).toHaveBeenCalledTimes(1) // was added in the merge
+          expect(eventOld).toHaveBeenCalledWith([{ id: 100 }])
           expect(eventExtra).toHaveBeenCalledTimes(0)
           expect(eventExtraYes).toHaveBeenCalledTimes(0)
 
@@ -466,7 +478,9 @@ describe('State', (): void => {
           expect(eventPosts).toHaveBeenCalledTimes(1) // posts content changed
           expect(eventOld).toHaveBeenCalledTimes(0) // is the same
           expect(eventExtra).toHaveBeenCalledTimes(1) // was created
+          expect(eventExtra).toHaveBeenCalledWith({ yes: 'no' })
           expect(eventExtraYes).toHaveBeenCalledTimes(1) // it appeared
+          expect(eventExtraYes).toHaveBeenCalledWith('no')
 
           eventAll.mockClear()
           eventPosts.mockClear()
@@ -484,7 +498,9 @@ describe('State', (): void => {
           expect(eventPosts).toHaveBeenCalledTimes(1) // posts content changed
           expect(eventOld).toHaveBeenCalledTimes(0) // is the same
           expect(eventExtra).toHaveBeenCalledTimes(1) // was created
+          expect(eventExtra).toHaveBeenCalledWith({ no: 'yes' })
           expect(eventExtraYes).toHaveBeenCalledTimes(1) // it disappeared
+          expect(eventExtraYes).toHaveBeenCalledWith(undefined)
         })
 
         it('can merge an object into the main state', async (): Promise<void> => {
@@ -577,7 +593,9 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(0) // Not changed
           expect(eventNew).toHaveBeenCalledTimes(1) // First element of this collection changed so it technically is different now
+          expect(eventNew).toHaveBeenCalledWith([{ id: 1, name: 'yes' }, { id: 2 }])
           expect(eventFirst).toHaveBeenCalledTimes(1) // First element was updated
+          expect(eventFirst).toHaveBeenCalledWith({ id: 1, name: 'yes' })
 
           eventAll.mockClear()
           eventPosts.mockClear()
@@ -597,7 +615,9 @@ describe('State', (): void => {
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
           expect(eventPosts).toHaveBeenCalledTimes(1) // Posts was updated
           expect(eventNew).toHaveBeenCalledTimes(1) // Potentially changed
+          expect(eventNew).toHaveBeenCalledWith([{ id: 1, name: 'yes' }, { id: 2 }])
           expect(eventFirst).toHaveBeenCalledTimes(1) // Potentially changed
+          expect(eventFirst).toHaveBeenCalledWith({ id: 1, name: 'yes' })
         })
 
         it('throws if trying to update the main state', async (): Promise<void> => {
