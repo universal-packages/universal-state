@@ -173,8 +173,8 @@ describe('State', (): void => {
           expect(state.get('posts/old')).toEqual([{ id: 200 }])
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(0) // is the same
-          expect(eventOld).toHaveBeenCalledTimes(0) // is the same
+          expect(eventPosts).toHaveBeenCalledTimes(1) // Potentially interested
+          expect(eventOld).toHaveBeenCalledTimes(1) // Potentially interested
           expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emitted
           expect(eventId).toHaveBeenCalledTimes(1) // of course id changed
 
@@ -254,8 +254,8 @@ describe('State', (): void => {
           await dispatcher.await()
           expect(state.get('posts')).toEqual({ new: [{}, { id: 2 }] })
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(0) // posts didn't really changed
-          expect(eventNew).toHaveBeenCalledTimes(0) // new didn't really changed
+          expect(eventPosts).toHaveBeenCalledTimes(1) // Potentially interested
+          expect(eventNew).toHaveBeenCalledTimes(1) // Potentially interested
           expect(eventAt0).toHaveBeenCalledTimes(1) // 0 contents changes so it was emitted
           expect(eventAt0).toHaveBeenCalledWith({})
           expect(eventId).toHaveBeenCalledTimes(1) // id was deleted so it technically changed
@@ -346,7 +346,7 @@ describe('State', (): void => {
           expect(state.get('posts/new')).toEqual([{ id: 1 }, { id: 2 }, { id: 100 }])
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(0) // posts contents didn't really changed
+          expect(eventPosts).toHaveBeenCalledTimes(1) //Potentially interested
           expect(eventNew).toHaveBeenCalledTimes(1) // new contents changed
           expect(eventAt0).toHaveBeenCalledTimes(1) // it appeared
           expect(eventAt0).toHaveBeenCalledWith({ id: 1 }) // it appeared
@@ -370,8 +370,8 @@ describe('State', (): void => {
           expect(state.get('posts/old')).toEqual([{ id: 200 }])
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(0) // is the same
-          expect(eventNew).toHaveBeenCalledTimes(0) // is the same
+          expect(eventPosts).toHaveBeenCalledTimes(1) // Potentially interested
+          expect(eventNew).toHaveBeenCalledTimes(0) // Nothing changed for it
           expect(eventOld).toHaveBeenCalledTimes(1) // content was created
           expect(eventOld).toHaveBeenCalledWith([{ id: 200 }])
 
@@ -591,7 +591,7 @@ describe('State', (): void => {
           expect(state.get('posts')).toEqual({ new: [{ id: 1, name: 'yes' }, { id: 2 }] })
 
           expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
-          expect(eventPosts).toHaveBeenCalledTimes(0) // Not changed
+          expect(eventPosts).toHaveBeenCalledTimes(1) // Potentially interested
           expect(eventNew).toHaveBeenCalledTimes(1) // First element of this collection changed so it technically is different now
           expect(eventNew).toHaveBeenCalledWith([{ id: 1, name: 'yes' }, { id: 2 }])
           expect(eventFirst).toHaveBeenCalledTimes(1) // First element was updated

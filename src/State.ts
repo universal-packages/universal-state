@@ -138,23 +138,6 @@ export default class State extends EventEmitter {
       throw new Error('Invalid path to value')
     }
 
-    for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
-      const currentPathTraverse = pathInfo.pathTraverse[i]
-
-      // Here we just make sure we set emits for every new child created in to the state tree
-      if (currentPathTraverse.created) {
-        const previousPathTraverse = pathInfo.pathTraverse[i - 1]
-
-        this.toEmit['*'] = this.state
-
-        if (previousPathTraverse && !previousPathTraverse.created) {
-          this.toEmit[previousPathTraverse.path] = previousPathTraverse.node
-        }
-
-        this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
-      }
-    }
-
     // We enable concat to just behave as "set" if we are setting the target for the first time
     // But if it already exists a target value in the tree and is not an array then we throw
     if (!pathInfo.targetNode[pathInfo.targetKey]) {
@@ -168,10 +151,17 @@ export default class State extends EventEmitter {
     }
 
     this.toEmit['*'] = this.state
-
     this.toEmit[pathInfo.path] = value
 
-    // When concatenated the the insides changes with potential deep children
+    // We emit to al listeners in the path under the concept of if something inside them changed
+    // Then they are interested in the change, listeners decide if they want to act on the change
+    for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
+      const currentPathTraverse = pathInfo.pathTraverse[i]
+      this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
+    }
+
+    // If something is listening further down the tree we also emit to them
+    // since they could have disappeared or appeared
     const subscribersEventNames = this.eventNames()
     for (let i = 0; i < subscribersEventNames.length; i++) {
       const currentEventName = subscribersEventNames[i] as string
@@ -195,16 +185,15 @@ export default class State extends EventEmitter {
 
     delete pathInfo.targetNode[pathInfo.targetKey]
 
-    const previousPath = pathInfo.pathTraverse[pathInfo.pathTraverse.length - 1]
-
     this.toEmit['*'] = this.state
-
-    // If we deleted the target node then the previous was modified by not having the target anymore
-    if (previousPath && !previousPath.created) {
-      this.toEmit[previousPath.path] = previousPath.node
-    }
-
     this.toEmit[pathInfo.path] = undefined
+
+    // We emit to al listeners in the path under the concept of if something inside them changed
+    // Then they are interested in the change, listeners decide if they want to act on the change
+    for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
+      const currentPathTraverse = pathInfo.pathTraverse[i]
+      this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
+    }
 
     // If we deleted a container then all its children were modified by not having the container anymore
     const subscribersEventNames = this.eventNames()
@@ -257,22 +246,6 @@ export default class State extends EventEmitter {
 
       if (pathInfo.error) throw new Error('Invalid path to value or target is not an object that can bve merged')
 
-      for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
-        const currentPathTraverse = pathInfo.pathTraverse[i]
-
-        if (currentPathTraverse.created) {
-          const previousPathTraverse = pathInfo.pathTraverse[i - 1]
-
-          this.toEmit['*'] = this.state
-
-          if (previousPathTraverse && !previousPathTraverse.created) {
-            this.toEmit[previousPathTraverse.path] = previousPathTraverse.node
-          }
-
-          this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
-        }
-      }
-
       // We go through all merge subject keys and prepare to notify any listener of those keys
       for (let i = 0; i < mergeSubjectKeys.length; i++) {
         const currentKey = mergeSubjectKeys[i]
@@ -280,15 +253,15 @@ export default class State extends EventEmitter {
         if (pathInfo.targetNode[currentKey] !== mergeSubject[currentKey]) {
           pathInfo.targetNode[currentKey] = mergeSubject[currentKey]
 
-          const previousPath = pathInfo.pathTraverse[pathInfo.pathTraverse.length - 1]
-
           this.toEmit['*'] = this.state
-
-          if (previousPath && !previousPath.created) {
-            this.toEmit[previousPath.path] = previousPath.node
-          }
-
           this.toEmit[`${pathInfo.path}/${currentKey}`] = pathInfo.targetNode[currentKey]
+
+          // We emit to al listeners in the path under the concept of if something inside them changed
+          // Then they are interested in the change, listeners decide if they want to act on the change
+          for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
+            const currentPathTraverse = pathInfo.pathTraverse[i]
+            this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
+          }
 
           // When merged the the insides changes with potential deep children
           const subscribersEventNames = this.eventNames()
@@ -311,37 +284,18 @@ export default class State extends EventEmitter {
     if (pathInfo.targetNodeIsRoot) throw new Error('Root state should not be directly set')
     if (pathInfo.error) throw new Error('Invalid path to value')
 
-    for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
-      const currentPathTraverse = pathInfo.pathTraverse[i]
-
-      if (currentPathTraverse.created) {
-        const previousPathTraverse = pathInfo.pathTraverse[i - 1]
-
-        this.toEmit['*'] = this.state
-
-        if (previousPathTraverse && !previousPathTraverse.created) {
-          this.toEmit[previousPathTraverse.path] = previousPathTraverse.node
-        }
-
-        this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
-      }
-    }
-
     if (pathInfo.targetNode[pathInfo.targetKey] !== value) {
       pathInfo.targetNode[pathInfo.targetKey] = value
 
-      const previousPathTraverse = pathInfo.pathTraverse[pathInfo.pathTraverse.length - 1]
-
       this.toEmit['*'] = this.state
-
-      // We emit for previous since its contents changed
-      // so in theory whatever is watching previous will be interested
-      // in its new contents
-      if (previousPathTraverse && !previousPathTraverse.created) {
-        this.toEmit[previousPathTraverse.path] = previousPathTraverse.node
-      }
-
       this.toEmit[pathInfo.path] = value
+
+      // We emit to al listeners in the path under the concept of if something inside them changed
+      // Then they are interested in the change, listeners decide if they want to act on the change
+      for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
+        const currentPathTraverse = pathInfo.pathTraverse[i]
+        this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
+      }
 
       // If we set something in a container then all its children were potentially modified
       const subscribersEventNames = this.eventNames()
@@ -431,16 +385,15 @@ export default class State extends EventEmitter {
     // and we could receive the same reference
     pathInfo.targetNode[pathInfo.targetKey] = newValue
 
-    const previousPath = pathInfo.pathTraverse[pathInfo.pathTraverse.length - 1]
-
     this.toEmit[pathInfo.path] = newValue
     this.toEmit['*'] = this.state
 
-    if (previousPath) {
-      this.toEmit[previousPath.path] = previousPath.node
+    // We emit to al listeners in the path under the concept of if something inside them changed
+    // Then they are interested in the change, listeners decide if they want to act on the change
+    for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
+      const currentPathTraverse = pathInfo.pathTraverse[i]
+      this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
     }
-
-    this.toEmit[pathInfo.path] = newValue
 
     // If we update a container then all its children were potentially modified
     const subscribersEventNames = this.eventNames()
