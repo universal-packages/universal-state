@@ -42,6 +42,9 @@ describe('State', (): void => {
       expect(eventAll).toHaveBeenCalledTimes(1)
       expect(eventPosts).toHaveBeenCalledTimes(1)
       expect(eventUsers1).toHaveBeenCalledTimes(1)
+      expect(eventAll).toHaveBeenCalledWith({})
+      expect(eventPosts).toHaveBeenCalledWith(undefined)
+      expect(eventUsers1).toHaveBeenCalledWith(undefined)
     })
   })
 

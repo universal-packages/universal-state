@@ -44,10 +44,13 @@ export default class State extends EventEmitter {
       delete this.state[keys[i]]
     }
 
+    this.emit('*', this.state)
+
     const subscribersEventNames = this.eventNames()
 
     for (let i = 0; i < subscribersEventNames.length; i++) {
-      this.emit(subscribersEventNames[i], this.state)
+      if (subscribersEventNames[i] === '*') continue
+      this.emit(subscribersEventNames[i], undefined)
     }
   }
 
