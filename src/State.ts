@@ -1,6 +1,7 @@
 import { BufferDispatcher } from '@universal-packages/buffer-dispatcher'
 import EventEmitter from 'events'
-import { ToEmit, ToolSet, Mutator, ProcessPathOptions, PathInfo, PathTraverse } from './State.types'
+
+import { Mutator, PathInfo, PathTraverse, ProcessPathOptions, ToEmit, ToolSet } from './State.types'
 
 /**
  *
@@ -33,6 +34,21 @@ export default class State extends EventEmitter {
     super()
 
     this.state = initialState || {}
+  }
+
+  /* Clears the states and emits to all listeners since all changed */
+  public clear(): void {
+    const keys = Object.keys(this.state)
+
+    for (let i = 0; i < keys.length; i++) {
+      delete this.state[keys[i]]
+    }
+
+    const subscribersEventNames = this.eventNames()
+
+    for (let i = 0; i < subscribersEventNames.length; i++) {
+      this.emit(subscribersEventNames[i], this.state)
+    }
   }
 
   /* Push a single concat mutation into the queue */

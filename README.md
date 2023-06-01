@@ -35,6 +35,10 @@ test()
 
 ### Instance methods
 
+#### **`.clear()`**
+
+Clears the state object and emits such big change to all listeners
+
 #### **`.get(path: String)`**
 
 Get any value using a deep path.
