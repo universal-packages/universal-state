@@ -87,8 +87,6 @@ state.mutate((toolSet) => {
 })
 ```
 
-### Instance methods
-
 #### **`.concat(path: String, array: Array)`**
 
 Directly append an array into one inside the state
