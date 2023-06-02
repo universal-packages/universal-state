@@ -16,12 +16,12 @@ describe('State', (): void => {
 
   describe('#getPath', (): void => {
     it('runs a string path or joined if array', async (): Promise<void> => {
-      expect(State.getPath('/cosas')).toEqual('cosas')
-      expect(State.getPath('/cosas//////////')).toEqual('cosas')
-      expect(State.getPath('  /////cosas//////////   ')).toEqual('  /cosas/   ')
-      expect(State.getPath(['cosas', 'mas cosas'])).toEqual('cosas/mas cosas')
-      expect(State.getPath('  /////cos/   / addd  /as//////////   ')).toEqual('  /cos/   / addd  /as/   ')
-      expect(State.getPath('/expected//kind/of/path')).toEqual('expected/kind/of/path')
+      expect(State.resolvePath('/cosas')).toEqual('cosas')
+      expect(State.resolvePath('/cosas//////////')).toEqual('cosas')
+      expect(State.resolvePath('  /////cosas//////////   ')).toEqual('  /cosas/   ')
+      expect(State.resolvePath(['cosas', 'mas cosas'])).toEqual('cosas/mas cosas')
+      expect(State.resolvePath('  /////cos/   / addd  /as//////////   ')).toEqual('  /cos/   / addd  /as/   ')
+      expect(State.resolvePath('/expected//kind/of/path')).toEqual('expected/kind/of/path')
     })
   })
 
@@ -73,19 +73,6 @@ describe('State', (): void => {
       expect(state.get('/users//old/1/id')).toEqual(users.old[1].id)
 
       expect(state.get('/not/a/path/to/something')).toEqual(undefined)
-    })
-
-    it('throws if not valid path is provided and hard is set to true', async (): Promise<void> => {
-      const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] }, users: { old: [{ id: 3 }, { id: 4 }] } }
-      const state = new State(initialState)
-
-      let error: Error
-      try {
-        state.get('/users//cat/1/name', true)
-      } catch (err) {
-        error = err
-      }
-      expect(error).toEqual(new Error("Can't get a value from an invalid path"))
     })
   })
 
@@ -585,7 +572,7 @@ describe('State', (): void => {
           } catch (err) {
             error = err
           }
-          expect(error).toEqual(new Error('Invalid path to value or target is not an object that can bve merged'))
+          expect(error).toEqual(new Error('Invalid path to value or target is not an object that can be merged'))
         })
       })
 

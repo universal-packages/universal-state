@@ -1,7 +1,8 @@
 import { BufferDispatcher } from '@universal-packages/buffer-dispatcher'
+import { navigateObject, resolvePath } from '@universal-packages/object-navigation'
 import EventEmitter from 'events'
 
-import { Mutator, PathInfo, PathTraverse, ProcessPathOptions, ToEmit, ToolSet } from './State.types'
+import { Mutator, ToEmit, ToolSet } from './State.types'
 
 /**
  *
@@ -90,40 +91,18 @@ export default class State extends EventEmitter {
   }
 
   /* Cleans app a path or builds one from an array */
-  public static getPath(path: string | string[]): string {
-    const joined = `/${Array.isArray(path) ? path.join('/') : path}/`
-    const striped = joined.replace(/\/+/gm, '/')
-
-    return striped.slice(1, striped.length - 1)
+  public static resolvePath(path: string | string[]): string {
+    return resolvePath(path)
   }
 
   /* It gets an element form the state using a path */
-  public get(path: string | string[] = '', hard = false): any {
-    const finalPath = State.getPath(path)
-    const elements = this.getElements(finalPath)
+  public get(path: string | string[] = ''): any {
+    const pathInfo = navigateObject(this.state, path)
 
-    // We return the whole state if the path is empty
-    if (elements.length === 1 && !elements[0]) return this.state
+    if (pathInfo.error) return undefined
+    if (pathInfo.path === '') return this.state
 
-    let currentNode = this.state
-
-    for (let i = 0; i < elements.length - 1; i++) {
-      const currentElement = elements[i]
-
-      // If the path is requiring us to keep advancing as if there was an object to keep advancing on
-      // but we reach a value in the tree that does not work as a map, we can not deliver a value
-      if (typeof currentNode[currentElement] !== 'object' || currentNode[currentElement] === null) {
-        if (hard) {
-          throw new Error("Can't get a value from an invalid path")
-        } else {
-          return undefined
-        }
-      }
-
-      currentNode = currentNode[elements[i]]
-    }
-
-    return currentNode[elements[elements.length - 1]]
+    return pathInfo.targetNode[pathInfo.targetKey]
   }
 
   /**
@@ -151,7 +130,7 @@ export default class State extends EventEmitter {
 
   /** Part of tool set will enable mutators to concat directly into state arrays  */
   private toolSetConcat(path: string | string[], value: any): void {
-    const pathInfo = this.processPath(path)
+    const pathInfo = navigateObject(this.state, path, { buildToTarget: true })
 
     if (pathInfo.targetNodeIsRoot) {
       throw new Error('Invalid path to value')
@@ -193,7 +172,7 @@ export default class State extends EventEmitter {
 
   /** Part of tool set will enable mutators to remove a key value in the state  */
   private toolSetRemove(path: string | string[]): void {
-    const pathInfo = this.processPath(path, { onlyCheck: true })
+    const pathInfo = navigateObject(this.state, path)
 
     if (pathInfo.targetNodeIsRoot) {
       throw new Error('Invalid path to value')
@@ -225,14 +204,9 @@ export default class State extends EventEmitter {
     }
   }
 
-  /** Helper method cleans a path and returns it path elements */
-  private getElements(path: string | string[]): string[] {
-    return State.getPath(path).split('/')
-  }
-
   /** Part of tool set will enable mutators to merge a map into the state or one of its nodes  */
   private toolSetMerge(treePath: string | string[], mergeSubject: any): void {
-    const pathInfo = this.processPath(treePath)
+    const pathInfo = navigateObject(this.state, treePath, { buildToTarget: true })
     const mergeSubjectKeys = Object.keys(mergeSubject)
 
     // When trying to merge into the root state we just merge and thats it
@@ -260,45 +234,53 @@ export default class State extends EventEmitter {
       }
     } else {
       // If it is not a merge into the root state we continue by trying to get
-      // the actual object in which we want to merge
-      const pathInfo = this.processPath(treePath, { includeLast: true })
+      // the actual object in which we want to merge into
+      const pathInfo = navigateObject(this.state, treePath, { buildToTarget: true })
 
-      if (pathInfo.error) throw new Error('Invalid path to value or target is not an object that can bve merged')
+      // We initialize the target object if it does not exist
+      if (pathInfo.targetNode[pathInfo.targetKey] === undefined) pathInfo.targetNode[pathInfo.targetKey] = {}
+
+      const targetInNode = pathInfo.targetNode[pathInfo.targetKey]
+
+      if (pathInfo.error || typeof targetInNode !== 'object' || targetInNode === null) throw new Error('Invalid path to value or target is not an object that can be merged')
 
       // We go through all merge subject keys and prepare to notify any listener of those keys
       for (let i = 0; i < mergeSubjectKeys.length; i++) {
         const currentKey = mergeSubjectKeys[i]
 
-        if (pathInfo.targetNode[currentKey] !== mergeSubject[currentKey]) {
-          pathInfo.targetNode[currentKey] = mergeSubject[currentKey]
+        if (targetInNode[currentKey] !== mergeSubject[currentKey]) {
+          targetInNode[currentKey] = mergeSubject[currentKey]
 
           this.toEmit['*'] = this.state
-          this.toEmit[`${pathInfo.path}/${currentKey}`] = pathInfo.targetNode[currentKey]
+          this.toEmit[`${pathInfo.path}/${currentKey}`] = targetInNode[currentKey]
+        }
 
-          // We emit to al listeners in the path under the concept of if something inside them changed
-          // Then they are interested in the change, listeners decide if they want to act on the change
-          for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
-            const currentPathTraverse = pathInfo.pathTraverse[i]
-            this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
-          }
+        // When merged the the insides changes with potential deep children
+        const subscribersEventNames = this.eventNames()
+        for (let i = 0; i < subscribersEventNames.length; i++) {
+          const currentEventName = subscribersEventNames[i] as string
 
-          // When merged the the insides changes with potential deep children
-          const subscribersEventNames = this.eventNames()
-          for (let i = 0; i < subscribersEventNames.length; i++) {
-            const currentEventName = subscribersEventNames[i] as string
-
-            if (currentEventName !== `${pathInfo.path}/${currentKey}` && currentEventName.startsWith(`${pathInfo.path}/${currentKey}`)) {
-              this.toEmit[currentEventName] = this.get(currentEventName)
-            }
+          if (currentEventName !== `${pathInfo.path}/${currentKey}` && currentEventName.startsWith(`${pathInfo.path}/${currentKey}`)) {
+            this.toEmit[currentEventName] = this.get(currentEventName)
           }
         }
       }
+
+      // We emit to al listeners in the path under the concept of if something inside them changed
+      // Then they are interested in the change, listeners decide if they want to act on the change
+      for (let i = 0; i < pathInfo.pathTraverse.length; i++) {
+        const currentPathTraverse = pathInfo.pathTraverse[i]
+        this.toEmit[currentPathTraverse.path] = currentPathTraverse.node
+      }
+
+      // We also emit to teh target key since is a container itself
+      this.toEmit[pathInfo.path] = pathInfo.targetNode[pathInfo.targetKey]
     }
   }
 
   /** Part of tool set will enable mutators to set a value in any part of the state  */
   private toolSetSet(path: string | string[], value: any): void {
-    const pathInfo = this.processPath(path)
+    const pathInfo = navigateObject(this.state, path, { buildToTarget: true })
 
     if (pathInfo.targetNodeIsRoot) throw new Error('Root state should not be directly set')
     if (pathInfo.error) throw new Error('Invalid path to value')
@@ -328,69 +310,8 @@ export default class State extends EventEmitter {
     }
   }
 
-  /**
-   * It goes thorough the path and matches the path with the state nodes,
-   * it also creates any nodes in case the user is setting deep into the state
-   * */
-  private processPath(path: string | string[], options: ProcessPathOptions = { includeLast: false, onlyCheck: false }): PathInfo {
-    const elements = this.getElements(path)
-    const pathTraverse: PathTraverse[] = []
-    const iterationLimit = options.includeLast ? elements.length : elements.length - 1
-    const targetNodeIsRoot = elements.length === 1 && elements[0] === ''
-    let currentNode = this.state
-    let currentPath = ''
-    let error = false
-
-    for (let i = 0; i < iterationLimit; i++) {
-      const currentElement = elements[i]
-      const targetInNode = currentNode[currentElement]
-      let created = false
-
-      currentPath = `${currentPath}${currentPath !== '' ? '/' : ''}${currentElement}`
-
-      // While going through the state using the path provided we realize we are about to go through a value
-      // that is not an valid object(map) to go through
-      if (typeof targetInNode !== 'object' || targetInNode === null) {
-        // And we are still going through the state
-        if (i < iterationLimit) {
-          // And the target in node is not undefined (since is nothing there we can possible
-          // initialize it, this as a feature when trying to set something deeply without
-          // the need of initializing level by level
-          if (targetInNode === undefined) {
-            if (options.onlyCheck) {
-              currentNode = undefined
-              error = true
-              break
-            }
-
-            currentNode[currentElement] = {}
-
-            created = true
-          } else {
-            error = true
-            break
-          }
-        }
-      }
-
-      currentNode = currentNode[elements[i]]
-
-      pathTraverse.push({ path: currentPath, node: currentNode, created })
-    }
-
-    return {
-      elements,
-      path: State.getPath(path),
-      pathTraverse,
-      targetKey: elements[elements.length - 1],
-      targetNode: currentNode,
-      targetNodeIsRoot,
-      error
-    }
-  }
-
   private toolSetUpdate<V = any>(path: string | string[], setter: (value: V) => V): void {
-    const pathInfo = this.processPath(path, { onlyCheck: true })
+    const pathInfo = navigateObject(this.state, path)
 
     if (pathInfo.targetNodeIsRoot || !pathInfo.targetNode) {
       throw new Error('Invalid path to value')
