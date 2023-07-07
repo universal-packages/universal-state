@@ -149,7 +149,7 @@ export default class State extends EventEmitter {
     }
 
     this.toEmit['*'] = this.state
-    this.toEmit[pathInfo.path] = value
+    this.toEmit[pathInfo.path] = pathInfo.targetNode[pathInfo.targetKey]
 
     // We emit to al listeners in the path under the concept of if something inside them changed
     // Then they are interested in the change, listeners decide if they want to act on the change
