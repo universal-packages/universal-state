@@ -1,6 +1,6 @@
 import { State, ToolSet } from '../src'
 
-describe('State', (): void => {
+describe(State, (): void => {
   it('it can have an initial state', async (): Promise<void> => {
     const state = new State({ initial: 'value' })
 
