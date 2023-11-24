@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@universal-packages/buffer-dispatcher": "^1.2.0",
+    "@universal-packages/event-emitter": "^1.0.0",
     "@universal-packages/object-navigation": "^1.0.0"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 import { BufferDispatcher } from '@universal-packages/buffer-dispatcher'
+import { EventEmitter } from '@universal-packages/event-emitter'
 import { navigateObject, resolvePath } from '@universal-packages/object-navigation'
-import EventEmitter from 'events'
 
 import { Mutator, ToEmit, ToolSet } from './State.types'
 
@@ -11,13 +11,19 @@ import { Mutator, ToEmit, ToolSet } from './State.types'
  *
  */
 export default class State extends EventEmitter {
-  public readonly state: any = {}
+  public get state(): any {
+    return this.internalState
+  }
+
+  public get await(): Promise<void> {
+    return this.bufferDispatcher.await
+  }
 
   /*
    * We use a buffer dispatcher so any mutation made to the state from anywhere
    * will be prioritized ina queue fashion.
    */
-  private bufferDispatcher = new BufferDispatcher<Mutator>(this.dispatchMutation.bind(this))
+  private bufferDispatcher = new BufferDispatcher<Mutator>({ entryDispatcher: this.dispatchMutation.bind(this) })
 
   /* The tool set provided to mutators, user should only mutate the state using these */
   private toolSet: ToolSet = {
@@ -31,61 +37,66 @@ export default class State extends EventEmitter {
   /* After a mutation here resides all the detected paths that should be notified by a change */
   private toEmit: ToEmit = {}
 
+  private internalState: any = {}
+
   public constructor(initialState?: any) {
     super()
 
-    this.state = initialState || {}
+    this.internalState = initialState || {}
+    this.bufferDispatcher.on('error', (event) => {
+      throw event.error
+    })
   }
 
   /* Clears the states and emits to all listeners since all changed */
   public clear(): void {
-    const keys = Object.keys(this.state)
+    const keys = Object.keys(this.internalState)
 
     for (let i = 0; i < keys.length; i++) {
-      delete this.state[keys[i]]
+      delete this.internalState[keys[i]]
     }
 
-    this.emit('*', this.state)
+    this.emit('@', { payload: this.internalState })
 
     const subscribersEventNames = this.eventNames()
 
     for (let i = 0; i < subscribersEventNames.length; i++) {
-      if (subscribersEventNames[i] === '*') continue
-      this.emit(subscribersEventNames[i], undefined)
+      if (subscribersEventNames[i] === '@') continue
+      this.emit(subscribersEventNames[i] as string, { payload: undefined })
     }
   }
 
   /* Push a single concat mutation into the queue */
-  public concat(path: string | string[], value: any): BufferDispatcher<Mutator> {
-    return this.mutate((toolSet: ToolSet): void => {
+  public concat(path: string | string[], value: any): void {
+    this.mutate((toolSet: ToolSet): void => {
       toolSet.concat(path, value)
     })
   }
 
   /* Push a single remove mutation into the queue */
-  public remove(path: string | string[]): BufferDispatcher<Mutator> {
-    return this.mutate((toolSet: ToolSet): void => {
+  public remove(path: string | string[]): void {
+    this.mutate((toolSet: ToolSet): void => {
       toolSet.remove(path)
     })
   }
 
   /* Push a single merge mutation into the queue */
-  public merge(path: string | string[], value: any): BufferDispatcher<Mutator> {
-    return this.mutate((toolSet: ToolSet): void => {
+  public merge(path: string | string[], value: any): void {
+    this.mutate((toolSet: ToolSet): void => {
       toolSet.merge(path, value)
     })
   }
 
   /* Push a single set mutation into the queue */
-  public set(path: string | string[], value: any): BufferDispatcher<Mutator> {
-    return this.mutate((toolSet: ToolSet): void => {
+  public set(path: string | string[], value: any): void {
+    this.mutate((toolSet: ToolSet): void => {
       toolSet.set(path, value)
     })
   }
 
   /* Push a single update mutation into the queue */
-  public update<V = any>(path: string | string[], setter: (value: V) => V): BufferDispatcher<Mutator> {
-    return this.mutate((toolSet: ToolSet): void => {
+  public update<V = any>(path: string | string[], setter: (value: V) => V): void {
+    this.mutate((toolSet: ToolSet): void => {
       toolSet.update(path, setter)
     })
   }
@@ -97,10 +108,10 @@ export default class State extends EventEmitter {
 
   /* It gets an element form the state using a path */
   public get(path: string | string[] = ''): any {
-    const pathInfo = navigateObject(this.state, path)
+    const pathInfo = navigateObject(this.internalState, path)
 
     if (pathInfo.error) return undefined
-    if (pathInfo.path === '') return this.state
+    if (pathInfo.path === '') return this.internalState
 
     return pathInfo.targetNode[pathInfo.targetKey]
   }
@@ -109,10 +120,8 @@ export default class State extends EventEmitter {
    * It takes a mutator functions as a parameter to push into the mutations buffer
    * to be dispatched as soon as possible
    */
-  public mutate(mutator: Mutator): BufferDispatcher<Mutator> {
-    this.bufferDispatcher.append(mutator)
-
-    return this.bufferDispatcher
+  public mutate(mutator: Mutator): void {
+    this.bufferDispatcher.push(mutator)
   }
 
   /** Called by our buffer dispatcher for every mutator pushed to it and emits all pending emits after every mutation */
@@ -122,7 +131,7 @@ export default class State extends EventEmitter {
     const toEmitKeys = Object.keys(this.toEmit)
 
     for (let i = 0; i < toEmitKeys.length; i++) {
-      this.emit(toEmitKeys[i], this.toEmit[toEmitKeys[i]])
+      this.emit(toEmitKeys[i], { payload: this.toEmit[toEmitKeys[i]] })
     }
 
     this.toEmit = {}
@@ -130,7 +139,7 @@ export default class State extends EventEmitter {
 
   /** Part of tool set will enable mutators to concat directly into state arrays  */
   private toolSetConcat(path: string | string[], value: any): void {
-    const pathInfo = navigateObject(this.state, path, { buildToTarget: true })
+    const pathInfo = navigateObject(this.internalState, path, { buildToTarget: true })
 
     if (pathInfo.targetNodeIsRoot) {
       throw new Error('Invalid path to value')
@@ -148,7 +157,7 @@ export default class State extends EventEmitter {
       throw new Error('Target is not an array')
     }
 
-    this.toEmit['*'] = this.state
+    this.toEmit['@'] = this.internalState
     this.toEmit[pathInfo.path] = pathInfo.targetNode[pathInfo.targetKey]
 
     // We emit to al listeners in the path under the concept of if something inside them changed
@@ -172,7 +181,7 @@ export default class State extends EventEmitter {
 
   /** Part of tool set will enable mutators to remove a key value in the state  */
   private toolSetRemove(path: string | string[]): void {
-    const pathInfo = navigateObject(this.state, path)
+    const pathInfo = navigateObject(this.internalState, path)
 
     if (pathInfo.targetNodeIsRoot) {
       throw new Error('Invalid path to value')
@@ -183,7 +192,7 @@ export default class State extends EventEmitter {
 
     delete pathInfo.targetNode[pathInfo.targetKey]
 
-    this.toEmit['*'] = this.state
+    this.toEmit['@'] = this.internalState
     this.toEmit[pathInfo.path] = undefined
 
     // We emit to al listeners in the path under the concept of if something inside them changed
@@ -206,12 +215,12 @@ export default class State extends EventEmitter {
 
   /** Part of tool set will enable mutators to merge a map into the state or one of its nodes  */
   private toolSetMerge(treePath: string | string[], mergeSubject: any): void {
-    const pathInfo = navigateObject(this.state, treePath, { buildToTarget: true })
+    const pathInfo = navigateObject(this.internalState, treePath, { buildToTarget: true })
     const mergeSubjectKeys = Object.keys(mergeSubject)
 
     // When trying to merge into the root state we just merge and thats it
     if (pathInfo.targetNodeIsRoot) {
-      this.toEmit['*'] = this.state
+      this.toEmit['@'] = this.internalState
 
       for (let i = 0; i < mergeSubjectKeys.length; i++) {
         const currentKey = mergeSubjectKeys[i]
@@ -235,7 +244,7 @@ export default class State extends EventEmitter {
     } else {
       // If it is not a merge into the root state we continue by trying to get
       // the actual object in which we want to merge into
-      const pathInfo = navigateObject(this.state, treePath, { buildToTarget: true })
+      const pathInfo = navigateObject(this.internalState, treePath, { buildToTarget: true })
 
       // We initialize the target object if it does not exist
       if (pathInfo.targetNode[pathInfo.targetKey] === undefined) pathInfo.targetNode[pathInfo.targetKey] = {}
@@ -251,7 +260,7 @@ export default class State extends EventEmitter {
         if (targetInNode[currentKey] !== mergeSubject[currentKey]) {
           targetInNode[currentKey] = mergeSubject[currentKey]
 
-          this.toEmit['*'] = this.state
+          this.toEmit['@'] = this.internalState
           this.toEmit[`${pathInfo.path}/${currentKey}`] = targetInNode[currentKey]
         }
 
@@ -280,7 +289,7 @@ export default class State extends EventEmitter {
 
   /** Part of tool set will enable mutators to set a value in any part of the state  */
   private toolSetSet(path: string | string[], value: any): void {
-    const pathInfo = navigateObject(this.state, path, { buildToTarget: true })
+    const pathInfo = navigateObject(this.internalState, path, { buildToTarget: true })
 
     if (pathInfo.targetNodeIsRoot) throw new Error('Root state should not be directly set')
     if (pathInfo.error) throw new Error('Invalid path to value')
@@ -288,7 +297,7 @@ export default class State extends EventEmitter {
     if (pathInfo.targetNode[pathInfo.targetKey] !== value) {
       pathInfo.targetNode[pathInfo.targetKey] = value
 
-      this.toEmit['*'] = this.state
+      this.toEmit['@'] = this.internalState
       this.toEmit[pathInfo.path] = value
 
       // We emit to al listeners in the path under the concept of if something inside them changed
@@ -311,7 +320,7 @@ export default class State extends EventEmitter {
   }
 
   private toolSetUpdate<V = any>(path: string | string[], setter: (value: V) => V): void {
-    const pathInfo = navigateObject(this.state, path)
+    const pathInfo = navigateObject(this.internalState, path)
 
     if (pathInfo.targetNodeIsRoot || !pathInfo.targetNode) {
       throw new Error('Invalid path to value')
@@ -326,7 +335,7 @@ export default class State extends EventEmitter {
     pathInfo.targetNode[pathInfo.targetKey] = newValue
 
     this.toEmit[pathInfo.path] = newValue
-    this.toEmit['*'] = this.state
+    this.toEmit['@'] = this.internalState
 
     // We emit to al listeners in the path under the concept of if something inside them changed
     // Then they are interested in the change, listeners decide if they want to act on the change

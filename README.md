@@ -33,6 +33,16 @@ test()
 // > { loading: false }
 ```
 
+### getters
+
+#### **`state`**
+
+Returns the current state object
+
+#### **`await`**
+
+Returns a promise that resolves when all mutations are dispatched
+
 ### Instance methods
 
 #### **`.clear()`**
@@ -61,13 +71,13 @@ async function test() {
   const state = new State(initialState)
   const user = await getUser()
 
-  const dispatcher = state.mutate((toolSet) => {
+  state.mutate((toolSet) => {
     toolSet.set('loading', false)
     toolSet.merge('auth/user', user)
     toolSet.remove('auth/empty')
   })
 
-  await despatcher.await()
+  await state.await
 
   console.log(state.get())
 }
@@ -147,19 +157,19 @@ The state object behaves just like a event emitter, you can subscribe to changes
 const initialState = { posts: { new: [{ id: 1 }, { id: 2 }] } }
 const state = new State(initialState)
 
-state.on('*', (state) => console.log('State changed'))
-state.on('posts', (posts) => console.log('Post changed'))
-state.on('posts/old', (old) => console.log('Old was created'))
-state.on('posts/old/0', (at0) => console.log('Old at 0 is part of the value set'))
-state.on('posts/old/0/id', (id) => console.log('Old at 0/id is part of the value set'))
-state.on('posts/new', (new) => console.log('Post new did not changed'))
-state.on('posts/new/0', (at0) => console.log('New at 0 changed'))
+state.on('@', ({payload}) => console.log('State changed'))
+state.on('posts', ({payload}) => console.log('Post changed'))
+state.on('posts/old', ({payload}) => console.log('Old was created'))
+state.on('posts/old/0', ({payload}) => console.log('Old at 0 is part of the value set'))
+state.on('posts/old/0/id', ({payload}) => console.log('Old at 0/id is part of the value set'))
+state.on('posts/new', ({payload}) => console.log('Post new did not changed'))
+state.on('posts/new/0', ({payload}) => console.log('New at 0 changed'))
 
 let dispatcher = state.mutate((toolSet: ToolSet): void => {
   toolSet.set('/posts/old/', [{ id: 100 }])
   toolSet.merge('/posts/new/0', { name: 'david' })
 })
-await dispatcher.await()
+await dispatcher.await
 
 // > State changed
 // > Post changed
