@@ -16,7 +16,7 @@
     "update-dependents": "umaintenance update-dependents"
   },
   "dependencies": {
-    "@universal-packages/buffer-dispatcher": "^1.2.2",
+    "@universal-packages/buffer-dispatcher": "^1.2.3",
     "@universal-packages/event-emitter": "^1.1.1",
     "@universal-packages/object-navigation": "^1.0.0"
   },
