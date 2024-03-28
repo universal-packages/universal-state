@@ -39,10 +39,6 @@ test()
 
 Returns the current state object
 
-#### **`await`**
-
-Returns a promise that resolves when all mutations are dispatched
-
 ### Instance methods
 
 #### **`.clear()`**
@@ -77,7 +73,7 @@ async function test() {
     toolSet.remove('auth/empty')
   })
 
-  await state.await
+  await state.waitForMutations()
 
   console.log(state.get())
 }
@@ -148,6 +144,10 @@ toolSet.update('users/ordered/0', (david) => {
   return { id: david.id, name: 'omar' }
 })
 ```
+
+#### **`.waitForMutations()`**
+
+Returns a promise that resolves when all mutations are dispatched
 
 ## Listening for changes
 

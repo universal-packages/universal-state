@@ -22,7 +22,7 @@ describe(State, (): void => {
           toolSet.remove('/posts/new/0/id')
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{}, { id: 2 }] })
         expect(eventAll).toHaveBeenCalledTimes(1) // Something changed across the state
@@ -43,7 +43,7 @@ describe(State, (): void => {
           toolSet.remove('/posts/old/0/id')
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{}, { id: 2 }] })
         expect(eventAll).toHaveBeenCalledTimes(0) // Nothing changed
@@ -62,7 +62,7 @@ describe(State, (): void => {
           toolSet.remove('/posts')
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual(undefined)
         expect(eventAll).toHaveBeenCalledTimes(1) // posts was deleted
@@ -81,15 +81,17 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.remove('')
-          })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.remove('')
+        })
+
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Invalid path to value'))
       })
     })

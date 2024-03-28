@@ -26,7 +26,7 @@ describe(State, (): void => {
           toolSet.set('/posts/old/', [{ id: 100 }])
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/old')).toEqual([{ id: 100 }])
 
@@ -48,7 +48,7 @@ describe(State, (): void => {
           toolSet.set('/posts/old/0/id', 200)
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/old')).toEqual([{ id: 200 }])
 
@@ -70,7 +70,7 @@ describe(State, (): void => {
           toolSet.set('/posts/more/deep/id', 200)
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/more/deep/id')).toEqual(200)
 
@@ -86,15 +86,17 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.set('/posts/new/0/id/1/more/deep', 200)
-          })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.set('/posts/new/0/id/1/more/deep', 200)
+        })
+
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Invalid path to value'))
       })
 
@@ -103,15 +105,17 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.set('', [{ id: 100 }])
-          })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.set('', [{ id: 100 }])
+        })
+
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Root state should not be directly set'))
       })
     })

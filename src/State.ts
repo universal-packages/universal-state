@@ -15,10 +15,6 @@ export default class State extends EventEmitter {
     return this.internalState
   }
 
-  public get await(): Promise<void> {
-    return this.bufferDispatcher.await
-  }
-
   /*
    * We use a buffer dispatcher so any mutation made to the state from anywhere
    * will be prioritized ina queue fashion.
@@ -44,7 +40,7 @@ export default class State extends EventEmitter {
 
     this.internalState = initialState || {}
     this.bufferDispatcher.on('error', (event) => {
-      throw event.error
+      this.emit('error', event)
     })
   }
 
@@ -122,6 +118,10 @@ export default class State extends EventEmitter {
    */
   public mutate(mutator: Mutator): void {
     this.bufferDispatcher.push(mutator)
+  }
+
+  public async waitForMutations(): Promise<void> {
+    if (this.bufferDispatcher.busy) await this.bufferDispatcher.waitFor('idle')
   }
 
   /** Called by our buffer dispatcher for every mutator pushed to it and emits all pending emits after every mutation */

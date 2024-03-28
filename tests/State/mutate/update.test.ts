@@ -24,7 +24,7 @@ describe(State, (): void => {
           })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1, name: 'yes' }, { id: 2 }] })
 
@@ -48,7 +48,7 @@ describe(State, (): void => {
           })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1, name: 'yes' }, { id: 2 }], updated: 'yes' })
 
@@ -65,19 +65,21 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.update('/', (posts: any): any => {
-              posts['yes'] = 'no'
 
-              return posts
-            })
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.update('/', (posts: any): any => {
+            posts['yes'] = 'no'
+
+            return posts
           })
+        })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Invalid path to value'))
       })
     })

@@ -8,7 +8,7 @@ describe(State, (): void => {
 
       state.merge('/posts/', { old: [{ id: 100 }] })
 
-      await state.await
+      await state.waitForMutations()
 
       expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }] })
     })

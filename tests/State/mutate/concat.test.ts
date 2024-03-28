@@ -28,7 +28,7 @@ describe(State, (): void => {
           toolSet.concat('/posts/new/', [{ id: 100 }])
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/new')).toEqual([{ id: 1 }, { id: 2 }, { id: 100 }])
 
@@ -54,7 +54,7 @@ describe(State, (): void => {
           toolSet.concat('/posts/old', [{ id: 200 }])
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/old')).toEqual([{ id: 200 }])
 
@@ -77,7 +77,7 @@ describe(State, (): void => {
           toolSet.concat('/posts/more/deep', [{ id: 200 }])
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/old')).toEqual([{ id: 200 }])
 
@@ -96,15 +96,17 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.concat('', [{ id: 100 }])
-          })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.concat('', [{ id: 100 }])
+        })
+
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Invalid path to value'))
       })
 
@@ -113,15 +115,17 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.concat('posts', [{ id: 100 }])
-          })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.concat('posts', [{ id: 100 }])
+        })
+
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Target is not an array'))
       })
     })

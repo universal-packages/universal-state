@@ -22,7 +22,7 @@ describe(State, (): void => {
           toolSet.merge('/posts/', { old: [{ id: 100 }] })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }] })
 
@@ -43,7 +43,7 @@ describe(State, (): void => {
           toolSet.merge('/posts/extra', { yes: 'no' })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }], extra: { yes: 'no' } })
 
@@ -65,7 +65,7 @@ describe(State, (): void => {
           toolSet.merge('/posts', { extra: { no: 'yes' } })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }], extra: { no: 'yes' } })
 
@@ -91,7 +91,7 @@ describe(State, (): void => {
           toolSet.merge('/', { tags: { new: [{ id: 100 }] } })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.state).toEqual({ posts: { new: [{ id: 1 }, { id: 2 }] }, users: { old: [{ id: 3 }, { id: 4 }] }, tags: { new: [{ id: 100 }] } })
 
@@ -116,7 +116,7 @@ describe(State, (): void => {
           toolSet.merge('/posts/meta', { tags: { new: [{ id: 100 }] } })
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.state).toEqual({ posts: { new: [{ id: 1 }, { id: 2 }], meta: { tags: { new: [{ id: 100 }] } } }, users: { old: [{ id: 3 }, { id: 4 }] } })
 
@@ -131,15 +131,17 @@ describe(State, (): void => {
         const state = new State(initialState)
 
         let error: Error
-        try {
-          state.mutate((toolSet: ToolSet): void => {
-            toolSet.merge('posts/new/0/id', [{ id: 100 }])
-          })
 
-          await state.await
-        } catch (err) {
-          error = err
-        }
+        state.on('error', (event) => {
+          error = event.error
+        })
+
+        state.mutate((toolSet: ToolSet): void => {
+          toolSet.merge('posts/new/0/id', [{ id: 100 }])
+        })
+
+        await state.waitForMutations()
+
         expect(error).toEqual(new Error('Invalid path to value or target is not an object that can be merged'))
       })
     })

@@ -8,7 +8,7 @@ describe(State, (): void => {
 
       state.remove('/posts/new/0/id')
 
-      await state.await
+      await state.waitForMutations()
 
       expect(state.get('posts')).toEqual({ new: [{}, { id: 2 }] })
     })

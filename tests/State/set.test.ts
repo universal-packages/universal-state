@@ -9,7 +9,7 @@ describe(State, (): void => {
 
         state.set('/posts/old/', [{ id: 100 }])
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/old')).toEqual([{ id: 100 }])
       })
@@ -22,7 +22,7 @@ describe(State, (): void => {
 
         state.remove('/posts/new/0/id')
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{}, { id: 2 }] })
       })
@@ -35,7 +35,7 @@ describe(State, (): void => {
 
         state.concat('/posts/new/', [{ id: 100 }])
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts/new')).toEqual([{ id: 1 }, { id: 2 }, { id: 100 }])
       })
@@ -48,7 +48,7 @@ describe(State, (): void => {
 
         state.merge('/posts/', { old: [{ id: 100 }] })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1 }, { id: 2 }], old: [{ id: 100 }] })
       })
@@ -65,7 +65,7 @@ describe(State, (): void => {
           return first
         })
 
-        await state.await
+        await state.waitForMutations()
 
         expect(state.get('posts')).toEqual({ new: [{ id: 1, name: 'yes' }, { id: 2 }] })
       })

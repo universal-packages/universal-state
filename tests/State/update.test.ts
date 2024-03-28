@@ -12,7 +12,7 @@ describe(State, (): void => {
         return first
       })
 
-      await state.await
+      await state.waitForMutations()
 
       expect(state.get('posts')).toEqual({ new: [{ id: 1, name: 'yes' }, { id: 2 }] })
     })

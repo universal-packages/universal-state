@@ -8,7 +8,7 @@ describe(State, (): void => {
 
       state.concat('/posts/new/', [{ id: 100 }])
 
-      await state.await
+      await state.waitForMutations()
 
       expect(state.get('posts/new')).toEqual([{ id: 1 }, { id: 2 }, { id: 100 }])
     })
