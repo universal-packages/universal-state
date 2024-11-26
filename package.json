@@ -16,8 +16,8 @@
     "update-universal-dependencies": "umaintenance update-universal-dependencies"
   },
   "dependencies": {
-    "@universal-packages/buffer-dispatcher": "^1.3.4",
-    "@universal-packages/event-emitter": "^1.1.5",
+    "@universal-packages/buffer-dispatcher": "^1.3.5",
+    "@universal-packages/event-emitter": "^1.1.6",
     "@universal-packages/object-navigation": "^1.0.3"
   },
   "devDependencies": {
